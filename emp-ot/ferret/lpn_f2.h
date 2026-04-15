@@ -36,9 +36,8 @@ class LpnF2 { public:
 		uint32_t* r = (uint32_t*)(tmp);
 		for(int m = 0; m < 4; ++m)
 			for (int j = 0; j < d; ++j) {
-				int index = (*r) & mask;
+				int index = (*r) % k;
 				++r;
-				index = index >= k? index-k:index;
 				nn[i+m] = nn[i+m] ^ kk[index];
 			}
 	}
@@ -65,20 +64,17 @@ class LpnF2 { public:
 
 	void compute(block * nn, const block * kk, block s = zero_block) {
 		vector<std::future<void>> fut;
-		int64_t width = n/threads;
+		int64_t chunk_size = (n + threads - 1) / threads;
         if(!cmpBlock(&s, &zero_block, 1)) seed = s;
 		else seed = seed_gen();
-		for(int i = 0; i < threads - 1; ++i) {
-			int64_t start = i * width;
-			int64_t end = min((i+1)* width, n);
+		for(int i = 0; i < threads; ++i) {
+			int64_t start = i * chunk_size;
+			if (start >= n) break;
+			int64_t end = min(start + chunk_size, n);
 			fut.push_back(pool->enqueue([this, nn, kk, start, end]() {
 				task(nn, kk, start, end);
 			}));
 		}
-		int64_t start = (threads - 1) * width;
-        	int64_t end = n;
-		task(nn, kk, start, end);
-
 		for (auto &f: fut) f.get();
 	}
 

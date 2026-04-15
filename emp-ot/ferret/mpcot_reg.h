@@ -86,6 +86,7 @@ public:
 	}
 
 	void mpcot_init_sender(vector<SPCOT_Sender<IO>*> &senders, OTPre<IO> *ot) {
+		senders.reserve(tree_n);
 		for(int i = 0; i < tree_n; ++i) {
 			senders.push_back(new SPCOT_Sender<IO>(netio, tree_height));
 			ot->choices_sender();
